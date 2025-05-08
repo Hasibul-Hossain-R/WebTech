@@ -24,7 +24,7 @@
   <div style="width: 1000px; height: 1500px; display: flex; border: 2px solid black;">
     <!-- Left Side -->
     <div style="flex: 1; display: flex; justify-content: center; align-items: center; border-right: 2px solid black; background: hwb(175 41% 15%);">
-      <form id="registrationForm" style="display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 30px;">
+      <form id="registrationForm" action="process.php" method="POST" style="display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 30px;">
         <h4>Registration</h4>
 
         <label for="fullname" style="align-self: flex-start; margin-left: 10px;">Full Name:</label>
@@ -101,29 +101,28 @@
 
       <p id="loginMessage" style="text-align: center; color: red; margin: 10px 0;"></p>
 
-      <div id="aqiContainer" class="hidden" style="flex: 4; display: flex; justify-content: center; align-items: center; padding: 10px; overflow-y: auto;">
-        <table id="aqiTable">
+      <div id="aqiContainer" style="flex: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; overflow-y: auto; background-color: #eee;">
+        <p id="loginNotice" style="color: red; font-weight: bold; text-align: center;">Please login to see Information</p>
+        <table id="aqiTable" style="margin-top: 10px;">
           <thead>
-            <tr>
-              <th>City</th>
-              <th>AQI</th>
-            </tr>
+            <tr><th>City</th><th>AQI</th></tr>
           </thead>
           <tbody>
-            <tr><td>Dhaka</td><td>155</td></tr>
-            <tr><td>Delhi</td><td>198</td></tr>
-            <tr><td>Karachi</td><td>134</td></tr>
-            <tr><td>Lahore</td><td>178</td></tr>
-            <tr><td>Kolkata</td><td>160</td></tr>
-            <tr><td>Chittagong</td><td>120</td></tr>
-            <tr><td>Mumbai</td><td>140</td></tr>
-            <tr><td>Islamabad</td><td>110</td></tr>
-            <tr><td>Chennai</td><td>90</td></tr>
-            <tr><td>Hyderabad</td><td>115</td></tr>
-            <tr><td>Bangkok</td><td>105</td></tr>
+            <tr><td>Dhaka</td><td class="aqiValue">---</td></tr>
+            <tr><td>Delhi</td><td class="aqiValue">---</td></tr>
+            <tr><td>Karachi</td><td class="aqiValue">---</td></tr>
+            <tr><td>Lahore</td><td class="aqiValue">---</td></tr>
+            <tr><td>Kolkata</td><td class="aqiValue">---</td></tr>
+            <tr><td>Chittagong</td><td class="aqiValue">---</td></tr>
+            <tr><td>Mumbai</td><td class="aqiValue">---</td></tr>
+            <tr><td>Islamabad</td><td class="aqiValue">---</td></tr>
+            <tr><td>Chennai</td><td class="aqiValue">---</td></tr>
+            <tr><td>Hyderabad</td><td class="aqiValue">---</td></tr>
+            <tr><td>Bangkok</td><td class="aqiValue">---</td></tr>
           </tbody>
         </table>
       </div>
+      
     </div>
   </div>
 
@@ -227,12 +226,26 @@
       const aqiContainer = document.getElementById("aqiContainer");
 
       if (loginEmail === storedEmail && loginPassword === storedPassword) {
-        loginMessage.textContent = "";
-        aqiContainer.classList.remove("hidden");
-      } else {
-        loginMessage.textContent = "Login unsuccessful. Please check your credentials.";
-        aqiContainer.classList.add("hidden");
-      }
+  loginMessage.textContent = "";
+  document.getElementById("loginNotice").style.display = "none";
+
+  const values = [155, 198, 134, 178, 160, 120, 140, 110, 90, 115, 105];
+  const aqiCells = document.querySelectorAll(".aqiValue");
+
+  aqiCells.forEach((cell, index) => {
+    cell.textContent = values[index];
+  });
+
+} else {
+  loginMessage.textContent = "Login unsuccessful. Please check your credentials.";
+  document.getElementById("loginNotice").style.display = "block";
+
+  const aqiCells = document.querySelectorAll(".aqiValue");
+  aqiCells.forEach((cell) => {
+    cell.textContent = "---";
+  });
+}
+
     });
   </script>
 </body>
