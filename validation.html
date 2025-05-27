@@ -24,7 +24,7 @@
   <div style="width: 1000px; height: 1500px; display: flex; border: 2px solid black;">
     <!-- Left Side -->
     <div style="flex: 1; display: flex; justify-content: center; align-items: center; border-right: 2px solid black; background: hwb(175 41% 15%);">
-      <form id="registrationForm" action="process.php" method="POST" style="display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 30px;">
+      <form id="registerForm" action="process.php" method="post" onsubmit="return validateRegisterForm()" style="display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 30px;">
         <h4>Registration</h4>
 
         <label for="fullname" style="align-self: flex-start; margin-left: 10px;">Full Name:</label>
@@ -87,14 +87,14 @@
     <!-- Right Side -->
     <div style="flex: 1; display: flex; flex-direction: column; background-color: rgb(117, 115, 113);">
       <div style="flex: 2; display: flex; justify-content: center; align-items: center; border-bottom: 2px solid black; background-color: rgb(118, 105, 116);">
-        <form id="loginForm" style="display: flex; flex-direction: column; align-items: center; width: 80%;">
+        <form id="loginForm" onsubmit="return validateLoginForm()" style="display: flex; flex-direction: column; align-items: center; width: 80%;">
           <h4>Login</h4>
           <label for="loginEmail" style="align-self: flex-start; margin-left: 5px; color: white;">Email:</label>
           <input type="email" id="loginEmail" name="loginEmail" style="width: 100%; padding: 5px; margin-bottom: 8px;" required />
       
           <label for="loginPassword" style="align-self: flex-start; margin-left: 5px; color: white;">Password:</label>
           <input type="password" id="loginPassword" name="loginPassword" style="width: 100%; padding: 5px; margin-bottom: 10px;" required />
-      
+          <div id="loginError" style="color:red;"></div>
           <button type="submit" style="padding: 5px 10px;">Login</button>
         </form>
       </div>
@@ -248,5 +248,33 @@
 
     });
   </script>
+
+  <script>
+  function validateRegisterForm() {
+    const pwd = document.querySelector("input[name='password']").value;
+    const confirm = document.querySelector("input[name='confirm-password']").value;
+    if (pwd !== confirm) {
+      alert("Passwords do not match!");
+      return false;
+    }
+    return true;
+  }
+
+  function validateLoginForm() {
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const user = users.find(u => u.email === email && u.password === password);
+
+    if (user) {
+      sessionStorage.setItem("username", user.fullname);
+      window.location.href = "request.php";
+    } else {
+      document.getElementById("loginError").innerText = "Invalid email or password.";
+    }
+    return false;
+  }
+</script>
 </body>
 </html>
