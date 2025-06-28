@@ -1,156 +1,173 @@
 <?php
 session_start();
 
-$conn = new mysqli("localhost", "root", "", "AQI");
+// If user not login -->> validation.html
+if (!isset($_SESSION['email'])) {
+    header("Location: validation.html");
+    exit();
+}
 
+// Take user full name from database
+$email = $_SESSION['email'];
+$conn = new mysqli("localhost", "root", "", "aqi");
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+$emailEsc = $conn->real_escape_string($email);
+$sql = "SELECT fullname FROM users WHERE email='$emailEsc' LIMIT 1";
+$result = $conn->query($sql);
+$fullname = $email;
+if ($result && $result->num_rows === 1) {
+    $row = $result->fetch_assoc();
+    $fullname = $row['fullname'];
+}
+$conn->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>AQI Form</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #eaf4fc;
-            margin: 0;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Select Cities</title>
+  <link rel="stylesheet" href="AQI.css" />
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f7f9;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
 
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-        }
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #4caf50;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 4px;
+    }
+    .header p {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .header a {
+      text-decoration: none;
+      color: #fff;
+      background-color: #f44336;
+      padding: 8px 12px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    .header a:hover {
+      background-color: #d32f2f;
+    }
 
-        #data {
-            color: red;
-            margin-bottom: 15px;
-        }
-
-        form {
-            background: #ffffff;
-            padding: 25px 30px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 750px;
-        }
-
-        .city-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .city-card {
-            background-color: #f1f9ff;
-            border: 2px solid transparent;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-            font-weight: 500;
-        }
-
-        .city-card input[type="checkbox"] {
-            display: none;
-        }
-
-        .city-card.checked {
-            background-color: #3498db;
-            color: white;
-            border-color: #2980b9;
-        }
-
-        input[type="submit"] {
-            margin-top: 20px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            display: block;
-            width: 100%;
-            max-width: 200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        input[type="submit"]:hover {
-            background-color: #2980b9;
-        }
-    </style>
+    /* Form */
+    h2 {
+      text-align: center;
+      color: #4caf50;
+      margin-top: 20px;
+    }
+    .city-select {
+      margin-top: 20px;
+    }
+    .city-select label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .city-select select {
+      width: 100%;
+      height: 240px;
+      padding: 10px;
+      border: 2px solid #4caf50;
+      border-radius: 4px;
+      background: #f9f9f9;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .city-select button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background: #4caf50;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .city-select button:hover {
+      background: #45a049;
+    }
+  </style>
 </head>
 <body>
-    <h1>Select up to 10 Cities for AQI Report</h1>
-    <p id="data"></p>
+  <div class="container">
+    <div class="header">
+      <p>Welcome, <?php echo htmlspecialchars($fullname); ?></p>
+      <a href="logout.php">Logout</a>
+    </div>
 
-    <form action="showaqi.php" method="post" target="_blank" onsubmit="return validate()">
-        <div class="city-grid">
-            <?php
-                $sql = "SELECT DISTINCT city FROM info LIMIT 20";
-                $result = $conn->query($sql);
+    <h2>Select Cities to View AQI (1-10)</h2>
 
-                if ($result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
-                        $city = htmlspecialchars($row['city']);
-                        echo "
-                            <label class='city-card'>
-                                $city
-                                <input type='checkbox' name='cities[]' value='$city'>
-                            </label>
-                        ";
-                    }
-                } else {
-                    echo "<p>No cities found.</p>";
-                }
-
-                $conn->close();
-            ?>
-        </div>
-        <input type="submit" name="submit" value="Submit">
+    <form method="POST" action="showaqi.php" class="city-select" onsubmit="return validateSelection();">
+      <label for="cities">Choose cities:</label>
+      <select name="cities[]" id="cities" multiple required>
+        <option value="Dhaka">Dhaka</option>
+        <option value="Delhi">Delhi</option>
+        <option value="Tokyo">Tokyo</option>
+        <option value="New York">New York</option>
+        <option value="Paris">Paris</option>
+        <option value="Beijing">Beijing</option>
+        <option value="London">London</option>
+        <option value="Karachi">Karachi</option>
+        <option value="Sydney">Sydney</option>
+        <option value="Sao Paulo">Sao Paulo</option>
+        <option value="Istanbul">Istanbul</option>
+        <option value="Moscow">Moscow</option>
+        <option value="Toronto">Toronto</option>
+        <option value="Cairo">Cairo</option>
+        <option value="Bangkok">Bangkok</option>
+        <option value="Berlin">Berlin</option>
+        <option value="Madrid">Madrid</option>
+        <option value="Seoul">Seoul</option>
+        <option value="Rome">Rome</option>
+        <option value="Dubai">Dubai</option>
+      </select>
+      <button type="submit">Submit</button>
     </form>
+  </div>
 
-    <script>
-        const cards = document.querySelectorAll('.city-card');
-        const message = document.getElementById('data');
-
-        cards.forEach(card => {
-            card.addEventListener('click', () => {
-                const checkbox = card.querySelector('input[type="checkbox"]');
-                const checkedCount = document.querySelectorAll("input[type='checkbox']:checked").length;
-
-                if (!checkbox.checked && checkedCount >= 10) {
-                    message.textContent = "❗ You can select at most 10 cities.";
-                    return;
-                }
-
-                checkbox.checked = !checkbox.checked;
-                card.classList.toggle('checked', checkbox.checked);
-                message.textContent = "";
-            });
-        });
-
-        function validate() {
-            const checked = document.querySelectorAll("input[type='checkbox']:checked").length;
-
-            if (checked === 0) {
-                message.textContent = "❗ Please select at least one city.";
-                return false;
-            }
-
-            return true;
-        }
-    </script>
+  <script>
+    function validateSelection() {
+      const select = document.getElementById('cities');
+      const count = Array.from(select.selectedOptions).length;
+      if (count < 1) {
+        alert('Please select at least one city.');
+        return false;
+      }
+      if (count > 10) {
+        alert('Please select no more than 10 cities.');
+        return false;
+      }
+      return true;
+    }
+  </script>
 </body>
 </html>

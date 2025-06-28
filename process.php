@@ -1,15 +1,17 @@
-<?php
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $fullname = $_POST["fullname"];
-    $email = $_POST["email"];
-    $password = $_POST["password"];
-    $confirmPassword = $_POST["confirm-password"];
-    $dob = $_POST["dob"];
-    $country = $_POST["country"];
-    $gender = isset($_POST["gender"]) ? $_POST["gender"] : "Not specified";
-    $color = $_POST["color"];
-    $description = $_POST["description"];
-    $terms = isset($_POST["terms"]) ? "Agreed" : "Not Agreed";
+<?php 
+session_start();
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['fullname'])) {
+    // Store user data in session for later
+    $_SESSION['fullname'] = $_POST['fullname'];
+    $_SESSION['email'] = $_POST['email'];
+    $_SESSION['password'] = $_POST['password'];
+    $_SESSION['dob'] = $_POST['dob'];
+    $_SESSION['country'] = $_POST['country'];
+    $_SESSION['gender'] = $_POST['gender'];
+    $_SESSION['color'] = $_POST['color'];
+    $_SESSION['description'] = $_POST['description'];
+    $_SESSION['terms'] = isset($_POST['terms']) ? 'Yes' : 'No';
 }
 ?>
 
@@ -17,78 +19,90 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Registration Summary</title>
+  <title>Confirm Your Information</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f2f2f2;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
     .container {
-      background-color: white;
-      padding: 30px;
+      background: white;
+      padding: 30px 40px;
       border-radius: 10px;
-      width: 500px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
     }
     h2 {
-      text-align: center;
       color: #333;
+      margin-bottom: 25px;
     }
-    p {
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0 0 30px 0;
+      text-align: left;
+      color: #555;
+    }
+    ul li {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
       font-size: 16px;
-      margin: 10px 0;
     }
-    .buttons {
+    ul li:last-child {
+      border-bottom: none;
+    }
+    .btn-group {
       display: flex;
-      justify-content: space-between;
-      margin-top: 30px;
+      justify-content: space-around;
+      gap: 20px;
     }
     button {
-      padding: 10px 20px;
+      background-color: #4CAF50;
       border: none;
+      color: white;
+      padding: 12px 28px;
+      font-size: 16px;
       border-radius: 6px;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+      flex: 1;
     }
-    .confirm {
-      background-color: #4CAF50;
-      color: white;
+    button:hover {
+      background-color: #45a049;
     }
-    .back {
+    button.cancel {
       background-color: #f44336;
-      color: white;
+    }
+    button.cancel:hover {
+      background-color: #d9362e;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Confirm Your Information</h2>
-    <p><strong>Full Name:</strong> <?= htmlspecialchars($fullname) ?></p>
-    <p><strong>Email:</strong> <?= htmlspecialchars($email) ?></p>
-    <p><strong>Date of Birth:</strong> <?= htmlspecialchars($dob) ?></p>
-    <p><strong>Country:</strong> <?= htmlspecialchars($country) ?></p>
-    <p><strong>Gender:</strong> <?= htmlspecialchars($gender) ?></p>
-    <p><strong>Selected Color:</strong> <span style="background-color: <?= htmlspecialchars($color) ?>; padding: 0 10px;"><?= htmlspecialchars($color) ?></span></p>
-    <p><strong>Description:</strong> <?= nl2br(htmlspecialchars($description)) ?></p>
-    <p><strong>Terms and Conditions:</strong> <?= $terms ?></p>
+    <ul>
+      <li><strong>Full Name:</strong> <?php echo htmlspecialchars($_SESSION['fullname']); ?></li>
+      <li><strong>Email:</strong> <?php echo htmlspecialchars($_SESSION['email']); ?></li>
+      <li><strong>Date of Birth:</strong> <?php echo htmlspecialchars($_SESSION['dob']); ?></li>
+      <li><strong>Country:</strong> <?php echo htmlspecialchars($_SESSION['country']); ?></li>
+      <li><strong>Gender:</strong> <?php echo htmlspecialchars($_SESSION['gender']); ?></li>
+      <li><strong>Favorite Color:</strong> <span style="display:inline-block; width:20px; height:20px; background:<?php echo htmlspecialchars($_SESSION['color']); ?>; border-radius:50%; vertical-align:middle; margin-left:5px;"></span></li>
+      <li><strong>Description:</strong><br /><?php echo nl2br(htmlspecialchars($_SESSION['description'])); ?></li>
+    </ul>
 
-    <div class="buttons">
-      <form action="confirmation.php" method="post">
-        <!-- Hidden inputs to pass data -->
-        <input type="hidden" name="fullname" value="<?= htmlspecialchars($fullname) ?>">
-        <input type="hidden" name="email" value="<?= htmlspecialchars($email) ?>">
-        <input type="hidden" name="dob" value="<?= htmlspecialchars($dob) ?>">
-        <input type="hidden" name="country" value="<?= htmlspecialchars($country) ?>">
-        <input type="hidden" name="gender" value="<?= htmlspecialchars($gender) ?>">
-        <input type="hidden" name="color" value="<?= htmlspecialchars($color) ?>">
-        <input type="hidden" name="description" value="<?= htmlspecialchars($description) ?>">
-        <input type="hidden" name="terms" value="<?= $terms ?>">
-        <button type="submit" class="confirm">Confirm</button>
-      </form>
-
-      <button onclick="history.back()" class="back">Back</button>
-    </div>
+    <form method="post" action="confirmation.php" class="btn-group">
+      <button type="submit" name="confirm">Confirm</button>
+      <button type="submit" name="cancel" class="cancel">Cancel</button>
+    </form>
   </div>
 </body>
 </html>

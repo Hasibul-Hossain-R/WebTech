@@ -1,124 +1,153 @@
 <?php
-if (isset($_POST['submit']) && isset($_POST['cities'])) {
-    $conn = new mysqli("localhost", "root", "", "AQI");
+session_start();
 
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
-
-    $cities = $_POST['cities'];
-    $placeholders = implode(",", array_fill(0, count($cities), "?"));
-
-    $stmt = $conn->prepare("SELECT city, country, aqi FROM info WHERE city IN ($placeholders)");
-    $types = str_repeat("s", count($cities));
-    $stmt->bind_param($types, ...$cities);
-    $stmt->execute();
-
-    $result = $stmt->get_result();
-    ?>
-    
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>AQI Results</title>
-        <style>
-            body {
-                font-family: 'Segoe UI', sans-serif;
-                background: #f4fbff;
-                margin: 0;
-                padding: 40px;
-                display: flex;
-                justify-content: center;
-                align-items: flex-start;
-            }
-
-            .container {
-                background-color: #ffffff;
-                padding: 30px;
-                border-radius: 12px;
-                box-shadow: 0 0 15px rgba(0,0,0,0.1);
-                width: 90%;
-                max-width: 700px;
-            }
-
-            h2 {
-                text-align: center;
-                color: #2c3e50;
-                margin-bottom: 25px;
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 10px;
-            }
-
-            th, td {
-                padding: 12px 15px;
-                border: 1px solid #ccc;
-                text-align: center;
-            }
-
-            th {
-                background-color: #3498db;
-                color: white;
-            }
-
-            tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-
-            tr:hover {
-                background-color: #ecf7ff;
-            }
-
-            .aqi {
-                font-weight: bold;
-                padding: 5px 10px;
-                border-radius: 5px;
-                display: inline-block;
-            }
-
-            .good    { background: #8bc34a; color: #fff; }
-            .moderate { background: #ffc107; color: #000; }
-            .unhealthy { background: #f44336; color: #fff; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>AQI Results</h2>
-            <table>
-                <tr>
-                    <th>City</th>
-                    <th>Country</th>
-                    <th>AQI</th>
-                </tr>
-                <?php
-                while ($row = $result->fetch_assoc()) {
-                    $aqi = (int)$row['aqi'];
-                    $class = 'good';
-                    if ($aqi > 100 && $aqi <= 200) {
-                        $class = 'moderate';
-                    } elseif ($aqi > 200) {
-                        $class = 'unhealthy';
-                    }
-                    echo "<tr>
-                            <td>" . htmlspecialchars($row['city']) . "</td>
-                            <td>" . htmlspecialchars($row['country']) . "</td>
-                            <td><span class='aqi $class'>{$row['aqi']}</span></td>
-                          </tr>";
-                }
-                ?>
-            </table>
-        </div>
-    </body>
-    </html>
-
-    <?php
-    $stmt->close();
-    $conn->close();
-} else {
-    echo "<h2 style='text-align: center; color: red;'>❌ No cities selected.</h2>";
+// User login check
+if (!isset($_SESSION['email'])) {
+    header("Location: validation.html");
+    exit();
 }
+
+// Cookie for background color
+$bgColor = isset($_COOKIE['bgColor']) ? $_COOKIE['bgColor'] : "#f4f7f9";
+
+
+$email = $_SESSION['email'];
+$conn = new mysqli("localhost", "root", "", "aqi");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+$emailEsc = $conn->real_escape_string($email);
+$sqlName = "SELECT fullname FROM users WHERE email='$emailEsc' LIMIT 1";
+$resName = $conn->query($sqlName);
+$fullname = $email;
+if ($resName && $resName->num_rows === 1) {
+    $rowName = $resName->fetch_assoc();
+    $fullname = $rowName['fullname'];
+}
+
+// City selection process
+if (!isset($_POST['cities']) || !is_array($_POST['cities'])) {
+    echo "<p>No cities selected. <a href='Request.php'>Go back</a></p>";
+    exit();
+}
+$cities = $_POST['cities'];
+$count = count($cities);
+if ($count < 1 || $count > 10) {
+    echo "<p>Invalid number of cities selected. <a href='Request.php'>Go back</a></p>";
+    exit();
+}
+
+// sanitize & in cloz
+$escaped = array_map([$conn, 'real_escape_string'], $cities);
+$in = "'" . implode("','", $escaped) . "'";
+$query = "SELECT city, country, aqi FROM info WHERE city IN ($in)";
+$data = $conn->query($query);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your AQI Results</title>
+  <link rel="stylesheet" href="AQI.css">
+  <style>
+    body {
+      background-color: <?php echo htmlspecialchars($bgColor); ?>;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #4caf50;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 4px;
+    }
+    .header p {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .header a {
+      text-decoration: none;
+      color: #fff;
+      background-color: #f44336;
+      padding: 8px 12px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    .header a:hover {
+      background-color: #d32f2f;
+    }
+    h2 {
+      text-align: center;
+      color: #4caf50;
+      margin-top: 20px;
+    }
+    #aqiTable {
+      margin: 20px auto;
+    }
+    .btn-back {
+      display: inline-block;
+      margin-top: 20px;
+      text-decoration: none;
+      background: #4caf50;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 4px;
+      transition: background 0.3s;
+    }
+    .btn-back:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <p>Welcome, <?php echo htmlspecialchars($fullname); ?></p>
+      <a href="logout.php">Logout</a>
+    </div>
+
+    <h2>Your Selected Cities AQI</h2>
+
+    <?php if ($data && $data->num_rows > 0): ?>
+      <table id="aqiTable">
+        <thead>
+          <tr>
+            <th>City</th>
+            <th>Country</th>
+            <th>AQI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php while ($row = $data->fetch_assoc()): ?>
+            <tr>
+              <td><?php echo htmlspecialchars($row['city']); ?></td>
+              <td><?php echo htmlspecialchars($row['country']); ?></td>
+              <td><?php echo htmlspecialchars($row['aqi']); ?></td>
+            </tr>
+          <?php endwhile; ?>
+        </tbody>
+      </table>
+    <?php else: ?>
+      <p>No AQI data found for selected cities.</p>
+    <?php endif; ?>
+
+    <a href="Request.php" class="btn-back">Choose Again</a>
+  </div>
+</body>
+</html>
+<?php
+$conn->close();
 ?>
